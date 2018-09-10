@@ -9,12 +9,12 @@ warnings.simplefilter('ignore', np.RankWarning)
 
 
 def file_processing(name):
-    """ Получает данные из .dat файла и записывает их в переменную data.
+    """ Получает данные из .dat файла и записывает их в переменную DataFrame
+    с именем raw_data.
 
-        raw_data = [[str, str, str], ..., [...]]
-            raw_data[:][0] -> длина волны.
-            raw_data[:][1] -> интенсивность.
-            raw_data[:][2] -> Х координата предметного столика.
+        raw_data['wavelengths'] = str - длина волны.
+        raw_data['intensity'] = str - интенсивность.
+        raw_data['x'] = str - Х координата предметного столика.
     """
 
     tic = time.time()
@@ -48,30 +48,30 @@ def file_processing(name):
 
 
 def preparing_data(raw_data):
-    """ Обрабатывает данные и записывает их в NumPy-массив с именем data. Так
-    же возвращает список Х координат образца - x_coordinates.
-
-        data = [(int, float, ..., float),
-                ...,
-                (int, float, ..., float)]
+    """ Обрабатывает данные из файла, распределяя их по координатам предметного
+    столика и записывает их DataFrame с именем data.
                 
-            data['wavelengths'] -> Длины волн на которых проводились измерения
-            data['x_coordinates[:]'] -> Интенсивности в Х коорденате образца
-
-        x_coordinates = [float, ..., float]
+        data['wavelengths'] = float - Длины волн на которых проводились
+        измерения.
+        data['i'] = float - Интенсивности в i-ой Х коорденате образца.
     """
     
     tic = time.time()
 
     data = pd.DataFrame()
+
+    # Получаем уникальные значения длин волн и Х координат
     wavelengths = raw_data['wavelengths'].unique()
     x_coordinates = raw_data['x'].unique()
-    data['wavelengths'] = wavelengths.astype('float64')
     
+    data['wavelengths'] = wavelengths.astype('float64')
+
+    # Переводим координаты предметного столика в координаты образца (центрируем)
     zero_x = x_coordinates[int(len(x_coordinates) / 2)]
     for i, value in enumerate(x_coordinates):
         x_coordinates[i] = round(float(value) - float(zero_x), 2)
 
+    # Заполняем переменную data
     for i_ind, value in enumerate(x_coordinates):
         data['{}'.format(value)] = raw_data['intensity']\
                                    [i_ind * len(wavelengths) : \
@@ -214,8 +214,7 @@ def finding_of_peaks(approximated_data, new_approximated_data):
     в переменные origin_peaks и new_peaks, которые имеют одинаковую структуру.
 
     new_peaks = [[float, ..., float], ..., [...]]
-        new_peaks[i] - значения длин волн пиков в x_coordinate[i] координате
-        образца.
+        new_peaks[i] - значение(я) длин волн пиков в i-ой Х координате образца.
     """
 
     tic = time.time()
@@ -269,7 +268,7 @@ def calculation_of_delta(origin_peaks, new_peaks):
     origin_delta = []
     new_delta = []
 
-    # Находим пики в координате соответствующей центру образца
+    # Находим пики в центре образца
     origin_central_peaks = origin_peaks[int(len(origin_peaks) / 2)]
     new_central_peaks = new_peaks[int(len(new_peaks) / 2)]
 
