@@ -19,7 +19,7 @@ def file_processing(name):
     tic = time.time()
     data = []
 
-    with open('{}.dat'.format(name), 'r') as f_r:
+    with open('data\{}.dat'.format(name), 'r') as f_r:
         while True:
             line = f_r.readline()
             if line == '':
