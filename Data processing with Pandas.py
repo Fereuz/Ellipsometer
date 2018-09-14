@@ -67,17 +67,16 @@ def preparing_data(raw_data):
     data['wavelengths'] = wavelengths.astype('float64')
 
     # Переводим координаты предметного столика в координаты образца (центрируем)
-    zero_x = x_coordinates[int(len(x_coordinates) / 2)]
+    zero_x = round(x_coordinates.astype('float64').mean(), 2)
     for i, value in enumerate(x_coordinates):
         x_coordinates[i] = round(float(value) - float(zero_x), 2)
 
     # Заполняем переменную data
-    for i_ind, value in enumerate(x_coordinates):
-        data['{}'.format(value)] = raw_data['intensity']\
-                                   [i_ind * len(wavelengths) : \
-                                    i_ind * len(wavelengths) + \
-                                    len(wavelengths)].reset_index()\
-                                    ['intensity'].astype('float64')
+    for i, value in enumerate(x_coordinates):
+        data[value] = raw_data['intensity'][i * len(wavelengths) : \
+                                            i * len(wavelengths) + \
+                                            len(wavelengths)].reset_index()\
+                                            ['intensity'].astype('float64')
 
     tac = time.time()
     print('Время на обработку данных = {:.3f} сек'.format(tac - tic))
@@ -91,7 +90,7 @@ def recording_data_to_file(name, data):
 
     tic = time.time()
 
-    with pd.ExcelWriter('{}.xls'.format(name)) as writer:
+    with pd.ExcelWriter(name + '.xls') as writer:
         data.to_excel(writer, 'Лист1', index=False)
         writer.save()
 
@@ -116,7 +115,7 @@ def original_approximation(data):
             
             # Получаем уравнение аппроксимирующей кривой степени-exponent
             approximating_function = np.poly1d(np.polyfit(data['wavelengths'],
-                                                          data['{}'.format(x)],
+                                                          data[x],
                                                           exponent))
 
             # Записываем аппроксимационные данные во временную переменную
@@ -124,7 +123,7 @@ def original_approximation(data):
 
             # Сумма квадратов отклонений аппроксим. данных от оригин. данных
             sum_of_squares = 0
-            for i, value in enumerate(data['{}'.format(x)]):
+            for i, value in enumerate(data[x]):
                 sum_of_squares = sum_of_squares + \
                                  (temporary_appr_data[i] - value) ** 2
 
@@ -136,11 +135,11 @@ def original_approximation(data):
         
         # Получаем уравнение полинома с наименьшим отклонением
         approximating_function = np.poly1d(np.polyfit(data['wavelengths'],
-                                                      data['{}'.format(x)],
+                                                      data[x],
                                                       best_exponent))
 
         # Аппроксимируем данные и записываем их в approximated_data
-        approximated_data['{}'.format(x)] = approximating_function(data['wavelengths'])
+        approximated_data[x] = approximating_function(data['wavelengths'])
         
     tac = time.time()
     print('Время на оригинальную аппроксимацию = {:.3f} сек'.format(tac - tic))
@@ -170,7 +169,7 @@ def new_approximation(data):
         sums_of_squares = []
 
         # Получаем данные с нужной формой
-        y_y = data['{}'.format(x)][start : end]
+        y_y = data[x][start : end]
         
         # Увеличиваем степень полинома, для нахождения оптимального уравнения 
         for exponent in range(100):
@@ -201,7 +200,7 @@ def new_approximation(data):
                                                       best_exponent))
 
         # Аппроксимируем данные и записываем их в approximated_data
-        new_approximated_data['{}'.format(x)] = approximating_function(x_x)
+        new_approximated_data[x] = approximating_function(x_x)
 
     tac = time.time()
     print('Время на новую аппроксимацию = {:.3f} сек'.format(tac - tic))
@@ -225,28 +224,28 @@ def finding_of_peaks(approximated_data, new_approximated_data):
 
     # Ищем пики с помощью полной аппроксимации
     for x_ind, x in enumerate(approximated_data.columns[1 :]):
-        for i, value in enumerate(approximated_data['{}'.format(x)]):
+        for i, value in enumerate(approximated_data[x]):
             
             # Пропускает первое и последнее значение кривой.
-            if i == 0 or i == len(approximated_data['{}'.format(x)]) - 1:
+            if i == 0 or i == len(approximated_data[x]) - 1:
                 continue
             
             # Если значение больше предыдущего и следующего - пик.
-            if value > approximated_data['{}'.format(x)][i - 1] and \
-               value > approximated_data['{}'.format(x)][i + 1]:
+            if value > approximated_data[x][i - 1] and \
+               value > approximated_data[x][i + 1]:
                 origin_peaks[x_ind].append(approximated_data['wavelengths'][i])
 
     # Ищем пики с помощью частичной аппроксимации
     for x_ind, x in enumerate(new_approximated_data.columns[1 :]):
-        for i, value in enumerate(new_approximated_data['{}'.format(x)]):
+        for i, value in enumerate(new_approximated_data[x]):
             
             # Пропускает первое и последнее значение кривой.
-            if i == 0 or i == len(new_approximated_data['{}'.format(x)]) - 1:
+            if i == 0 or i == len(new_approximated_data[x]) - 1:
                 continue
             
             # Если значение больше предыдущего и следующего - пик.
-            if value > new_approximated_data['{}'.format(x)].values[i - 1] and \
-               value > new_approximated_data['{}'.format(x)].values[i + 1]:
+            if value > new_approximated_data[x].values[i - 1] and \
+               value > new_approximated_data[x].values[i + 1]:
                 new_peaks[x_ind].append(new_approximated_data['wavelengths']\
                                         .values[i])
       
