@@ -10,46 +10,22 @@ warnings.simplefilter('ignore', np.RankWarning)
 
 def file_processing(name):
     """ Получает данные из .dat файла и записывает их в переменную DataFrame
-    с именем raw_data.
-
-        raw_data['wavelengths'] = str - длина волны.
-        raw_data['intensity'] = str - интенсивность.
-        raw_data['x'] = str - Х координата предметного столика.
-    """
+    с именем raw_data"""
 
     tic = time.time()
-    raw_data = []
-
-    with open('data\{}.dat'.format(name), 'r') as f_r:
-        while True:
-            line = f_r.readline()
-            if line == '':
-                break
-
-            # Столбцы с данными разделены табуляцией
-            line_r = line.split('\t')
-
-            # Может присутствовать несколько символов табуляции вместе
-            for i in line_r:
-                if len(i) == 0:
-                    line_r.remove(i)
-
-            # Пропускаем техническую информацию из файла
-            if len(line_r) > 5:
-                raw_data.append(line_r[1::2])
-
-    raw_data = pd.DataFrame(raw_data,
-                            columns=['wavelengths', 'intensity', 'x'])
+    
+    raw_data = pd.read_table('data/{}.dat'.format(name),
+                             sep='\s+', header=None, skiprows=5)
 
     tac = time.time()
     print('Время на открытие и чтение файла = {:.3f} сек'.format(tac - tic))
-
+    
     return raw_data
 
 
 def preparing_data(raw_data):
     """ Обрабатывает данные из файла, распределяя их по координатам предметного
-    столика и записывает их DataFrame с именем data.
+    столика и записывает их в DataFrame с именем data.
                 
         data['wavelengths'] = float - Длины волн на которых проводились
         измерения.
@@ -61,10 +37,10 @@ def preparing_data(raw_data):
     data = pd.DataFrame()
 
     # Получаем уникальные значения длин волн и Х координат
-    wavelengths = raw_data['wavelengths'].unique()
-    x_coordinates = raw_data['x'].unique()
+    wavelengths = raw_data[1].unique()
+    x_coordinates = raw_data[5].unique()
     
-    data['wavelengths'] = wavelengths.astype('float64')
+    data['wavelengths'] = wavelengths.astype('int64')
 
     # Переводим координаты предметного столика в координаты образца (центрируем)
     zero_x = round(x_coordinates.astype('float64').mean(), 2)
@@ -73,10 +49,10 @@ def preparing_data(raw_data):
 
     # Заполняем переменную data
     for i, value in enumerate(x_coordinates):
-        data[value] = raw_data['intensity'][i * len(wavelengths) : \
-                                            i * len(wavelengths) + \
-                                            len(wavelengths)].reset_index()\
-                                            ['intensity'].astype('float64')
+        data[value] = raw_data[3][i * len(wavelengths) : \
+                                  i * len(wavelengths) + \
+                                  len(wavelengths)].reset_index()\
+                                  [3].astype('float64')
 
     tac = time.time()
     print('Время на обработку данных = {:.3f} сек'.format(tac - tic))
@@ -316,7 +292,8 @@ def drawing_delta(name, data, origin_delta, new_delta):
 
 
 def main():
-    name = input("Введите имя файла для обработки \n")
+##    name = input("Введите имя файла для обработки \n")
+    name = '1094'
 
     data = preparing_data(file_processing(name))
 
