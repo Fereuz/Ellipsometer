@@ -292,8 +292,7 @@ def drawing_delta(name, data, origin_delta, new_delta):
 
 
 def main():
-##    name = input("Введите имя файла для обработки \n")
-    name = '1094'
+    name = input("Введите имя файла для обработки \n")
 
     data = preparing_data(file_processing(name))
 
