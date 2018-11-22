@@ -33,26 +33,24 @@ def preparing_data(raw_data):
     """
     
     tic = time.time()
-
     data = pd.DataFrame()
 
     # Получаем уникальные значения длин волн и Х координат
-    wavelengths = raw_data[1].unique()
-    x_coordinates = raw_data[5].unique()
-    
-    data['wavelengths'] = wavelengths.astype('int64')
+    data['wavelengths'] = raw_data[1].unique().astype('int64')
+    x_coordinates = raw_data[5].unique().astype('float64')
+
+    # Группируем данные из вектора в массив
+    values = raw_data[3].values.reshape(int(len(raw_data) / len(data['wavelengths'])),
+                                        len(data['wavelengths']))
 
     # Переводим координаты предметного столика в координаты образца (центрируем)
-    zero_x = round(x_coordinates.astype('float64').mean(), 2)
+    mean_x = round(x_coordinates.mean(), 2)
     for i, value in enumerate(x_coordinates):
-        x_coordinates[i] = round(float(value) - float(zero_x), 2)
+        x_coordinates[i] = round(value - mean_x, 2)
 
     # Заполняем переменную data
     for i, value in enumerate(x_coordinates):
-        data[value] = raw_data[3][i * len(wavelengths) : \
-                                  i * len(wavelengths) + \
-                                  len(wavelengths)].reset_index()\
-                                  [3].astype('float64')
+        data[value] = values[i].astype('float64')
 
     tac = time.time()
     print('Время на обработку данных = {:.3f} сек'.format(tac - tic))
